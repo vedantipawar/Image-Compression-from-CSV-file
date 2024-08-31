@@ -68,22 +68,34 @@ async function processImage(imageUrl, requestId) {
         const response = await axios({ url: imageUrl, responseType: 'arraybuffer' });
         const imageBuffer = Buffer.from(response.data);
 
-        // Process the image (example: resize)
-        const processedImageBuffer = await sharp(imageBuffer).resize(800).toBuffer();
+        // Process the image (e.g., compress)
+        const processedImageBuffer = await sharp(imageBuffer)
+            .resize(800) // Example resize operation
+            .toBuffer();
 
-        // Save the processed image (for example, to a local folder)
-        const processedImagePath = path.join(__dirname, 'processed', `${uuidv4()}.jpg`);
+        // Generate a unique filename and define the path to save the processed image
+        const processedImageName = `${uuidv4()}.jpg`;
+        const processedImagePath = path.join(__dirname, 'processed', processedImageName);
+
+        // Ensure the 'processed' directory exists
+        fs.mkdirSync(path.dirname(processedImagePath), { recursive: true });
+
+        // Save the processed image locally
         fs.writeFileSync(processedImagePath, processedImageBuffer);
 
-        // Update the document in MongoDB
+        // Update the MongoDB document with the local file path of the processed image
         await Image.updateOne(
             { requestId, imageUrl },
             { status: 'finished', processedImageUrl: processedImagePath }
         );
 
-        console.log(`Image processed and saved: ${processedImagePath}`);
+        console.log(`Image processed and saved locally: ${processedImagePath}`);
     } catch (error) {
         console.error(`Error processing image ${imageUrl}: ${error}`);
+        await Image.updateOne(
+            { requestId, imageUrl },
+            { status: 'error', errorMessage: error.message }
+        );
     }
 }
 
@@ -105,7 +117,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
         console.log(`File is valid. Generated Request ID: ${requestId}`);
 
         // Read the CSV file and process each image
-        fs.createReadStream(filePath)
+        const csvStream = fs.createReadStream(filePath)
             .pipe(csvParser())
             .on('data', async (row) => {
                 const imageUrls = row['Input Image Urls'].split(',');
@@ -124,20 +136,21 @@ app.post('/upload', upload.single('file'), async (req, res) => {
             })
             .on('end', () => {
                 console.log('CSV file processing completed.');
+
+                // File deletion after processing is complete
+                fs.unlink(filePath, (err) => {
+                    if (err) {
+                        console.error(`Failed to delete the file: ${err}`);
+                    } else {
+                        console.log(`File deleted: ${filePath}`);
+                    }
+                });
             });
 
         res.json({ requestId });
     } catch (error) {
         console.error(`Validation error: ${error}`);
         res.status(400).json({ error: error });
-    } finally {
-        fs.unlink(filePath, (err) => {
-            if (err) {
-                console.error(`Failed to delete the file: ${err}`);
-            } else {
-                console.log(`File deleted: ${filePath}`);
-            }
-        });
     }
 });
 
