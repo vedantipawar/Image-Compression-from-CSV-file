@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV File Upload</title>
+</head>
+<body>
+    <h1>Upload CSV File</h1>
+    <form id="uploadForm">
+        <input type="file" id="fileInput" accept=".csv" />
+        <button type="button" id="uploadButton">Upload</button>
+    </form>
+
+    <script>
+        document.getElementById('uploadButton').addEventListener('click', function() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Please select a file before uploading.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('Response Status:', response.status);
+                console.log('Response Headers:', [...response.headers.entries()]);
+
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        console.error('Error Response:', text);
+                        throw new Error('Network response was not ok');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response JSON:', data);
+                if (data.requestId) {
+                    alert(`Upload successful! Your request ID is: ${data.requestId}`);
+                } else {
+                    alert('Upload successful, but no request ID returned.');
+                }
+            })
+            .catch(error => {
+                console.error('Error uploading file:', error);
+                alert('Error uploading file. Check the console for details.');
+            });
+        });
+    </script>
+</body>
+</html>
