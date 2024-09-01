@@ -91,3 +91,22 @@ This project involves building a system to efficiently process image data from C
 ---
 
 
+## Components Overview
+
+### **Database Interaction**
+- **Function**: This component is responsible for storing and tracking the status of each processing request.
+- **Role**: Manages database operations to save and retrieve image processing details. It stores metadata such as the request ID, image URLs, processing status, and error messages. It updates the status of each image as it progresses through the processing stages.
+
+### **API Endpoints**
+
+#### **Upload API**
+- **Function**: Accepts CSV files containing image URLs and other metadata.
+- **Role**: Processes the uploaded CSV file, validates its contents, and initiates image processing tasks. It returns a unique request ID for tracking the processing status of the images.
+
+#### **Status API**
+- **Function**: Provides the processing status of images based on a request ID.
+- **Role**: Allows users to query the status of image processing tasks using a request ID. It retrieves and returns information about the status of each image, including any error messages and URLs of processed images.
+
+---
+
+
