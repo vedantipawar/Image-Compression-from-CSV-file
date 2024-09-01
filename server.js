@@ -120,11 +120,15 @@ app.post('/upload', upload.single('file'), async (req, res) => {
         const csvStream = fs.createReadStream(filePath)
             .pipe(csvParser())
             .on('data', async (row) => {
+                const serialNumber = row['Serial Number'];
+                const productName = row['Product Name'];
                 const imageUrls = row['Input Image Urls'].split(',');
 
                 for (const imageUrl of imageUrls) {
                     const imageDoc = new Image({
                         requestId,
+                        serialNumber,
+                        productName,
                         imageUrl: imageUrl.trim(),
                     });
 
@@ -156,7 +160,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 
 app.get('/status/:requestId', async (req, res) => {
     const { requestId } = req.params;
-    
+
     try {
         // Find all images with the given requestId
         const images = await Image.find({ requestId });
@@ -165,13 +169,21 @@ app.get('/status/:requestId', async (req, res) => {
             return res.status(404).json({ error: 'No images found for this Request ID.' });
         }
 
-        // Return the status of each image
-        res.json(images);
+        // Return the status of each image along with Serial Number and Product Name
+        res.json(images.map(image => ({
+            serialNumber: image.serialNumber,
+            productName: image.productName,
+            imageUrl: image.imageUrl,
+            status: image.status,
+            processedImageUrl: image.processedImageUrl,
+            errorMessage: image.errorMessage
+        })));
     } catch (error) {
         console.error(`Error fetching status for Request ID ${requestId}: ${error}`);
         res.status(500).json({ error: 'An error occurred while fetching the status.' });
     }
 });
+
 
 app.listen(3000, () => {
     console.log('Server is running on port 3000');

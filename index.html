@@ -70,14 +70,34 @@
                     if (data.error) {
                         result += `<p>Error: ${data.error}</p>`;
                     } else {
+                        // Group images by Serial Number and Product Name
+                        const groupedData = {};
+
                         data.forEach(image => {
-                            result += `<p>Image URL: ${image.imageUrl}</p>`;
-                            result += `<p>Status: ${image.status}</p>`;
-                            if (image.processedImageUrl) {
-                                result += `<p>Processed Image: <a href="${image.processedImageUrl}" target="_blank">View Image</a></p>`;
+                            const key = `${image.serialNumber}_${image.productName}`;
+                            if (!groupedData[key]) {
+                                groupedData[key] = {
+                                    serialNumber: image.serialNumber,
+                                    productName: image.productName,
+                                    inputUrls: [],
+                                    outputUrls: []
+                                };
                             }
-                            result += `<hr>`;
+                            groupedData[key].inputUrls.push(image.imageUrl);
+                            if (image.processedImageUrl) {
+                                groupedData[key].outputUrls.push(image.processedImageUrl);
+                            }
                         });
+
+                        // Generate the HTML for grouped data
+                        for (const key in groupedData) {
+                            const group = groupedData[key];
+                            result += `<h3>S. No.: ${group.serialNumber}</h3>`;
+                            result += `<p>Product Name: ${group.productName}</p>`;
+                            result += `<p><strong>Input Image URLs:</strong><br>${group.inputUrls.join(',<br>')}</p>`;
+                            result += `<p><strong>Output Image URLs:</strong><br>${group.outputUrls.join(',<br>')}</p>`;
+                            result += `<hr>`;
+                        }
                     }
                     document.getElementById('statusResult').innerHTML = result;
                 })
