@@ -106,6 +106,7 @@ This project involves building a system to efficiently process image data from C
 #### **Status API**
 - **Function**: Provides the processing status of images based on a request ID.
 - **Role**: Allows users to query the status of image processing tasks using a request ID. It retrieves and returns information about the status of each image, including any error messages and URLs of processed images.
+![Screenshot 2024-09-01 000246](https://github.com/user-attachments/assets/119b6256-b2e2-4074-9f51-162245931b28)
 
 ---
 
