@@ -68,10 +68,13 @@ async function processImage(imageUrl, requestId) {
         const response = await axios({ url: imageUrl, responseType: 'arraybuffer' });
         const imageBuffer = Buffer.from(response.data);
 
+        const metadata = await sharp(imageBuffer).metadata();
         // Process the image (e.g., compress)
         const processedImageBuffer = await sharp(imageBuffer)
-            .resize(800) // Example resize operation
-            .toBuffer();
+            .resize({ width: Math.floor(metadata.width * 0.5), height: Math.floor(metadata.height * 0.5) }) // Resizes to 50% of original dimensions
+            .toFormat('jpeg') // Converts to JPEG format
+            .jpeg({ quality: 80 }) // Adjusts the JPEG quality to 80%
+            .toBuffer(); // Outputs the processed image as a buffer
 
         // Generate a unique filename and define the path to save the processed image
         const processedImageName = `${uuidv4()}.jpg`;
