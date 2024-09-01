@@ -12,6 +12,15 @@
         <button type="button" id="uploadButton">Upload</button>
     </form>
 
+    <h1>Check Image Processing Status</h1>
+    <form id="statusForm">
+        <label for="requestId">Enter Request ID:</label>
+        <input type="text" id="requestId" name="requestId" required>
+        <button type="submit">Check Status</button>
+    </form>
+
+    <div id="statusResult"></div>
+
     <script>
         document.getElementById('uploadButton').addEventListener('click', function() {
             const fileInput = document.getElementById('fileInput');
@@ -30,19 +39,14 @@
                 body: formData
             })
             .then(response => {
-                console.log('Response Status:', response.status);
-                console.log('Response Headers:', [...response.headers.entries()]);
-
                 if (!response.ok) {
                     return response.text().then(text => {
-                        console.error('Error Response:', text);
-                        throw new Error('Network response was not ok');
+                        throw new Error(text);
                     });
                 }
                 return response.json();
             })
             .then(data => {
-                console.log('Response JSON:', data);
                 if (data.requestId) {
                     alert(`Upload successful! Your request ID is: ${data.requestId}`);
                 } else {
@@ -53,6 +57,33 @@
                 console.error('Error uploading file:', error);
                 alert('Error uploading file. Check the console for details.');
             });
+        });
+
+        document.getElementById('statusForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const requestId = document.getElementById('requestId').value;
+            fetch(`/status/${requestId}`)
+                .then(response => response.json())
+                .then(data => {
+                    let result = `<h2>Status for Request ID: ${requestId}</h2>`;
+                    if (data.error) {
+                        result += `<p>Error: ${data.error}</p>`;
+                    } else {
+                        data.forEach(image => {
+                            result += `<p>Image URL: ${image.imageUrl}</p>`;
+                            result += `<p>Status: ${image.status}</p>`;
+                            if (image.processedImageUrl) {
+                                result += `<p>Processed Image: <a href="${image.processedImageUrl}" target="_blank">View Image</a></p>`;
+                            }
+                            result += `<hr>`;
+                        });
+                    }
+                    document.getElementById('statusResult').innerHTML = result;
+                })
+                .catch(error => {
+                    document.getElementById('statusResult').innerHTML = `<p>Error: ${error.message}</p>`;
+                });
         });
     </script>
 </body>
